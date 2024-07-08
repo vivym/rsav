@@ -81,7 +81,7 @@ impl Rational {
 
     #[inline]
     pub fn reduce(&self) -> Rational {
-        match self.reduce_with_limit(i32::max_value()) {
+        match self.reduce_with_limit(i32::MAX) {
             Ok(r) => r,
             Err(r) => r,
         }
@@ -95,9 +95,7 @@ impl Rational {
         let mut dst_den = 0;
 
         unsafe {
-            let exact = ffi::av_reduce(
-                &mut dst_num, &mut dst_den, num as _, den as _, max as _
-            );
+            let exact = ffi::av_reduce(&mut dst_num, &mut dst_den, num as _, den as _, max as _);
 
             if exact == 1 {
                 Ok(Rational(dst_num, dst_den))
@@ -118,16 +116,17 @@ impl From<ffi::AVRational> for Rational {
 impl From<Rational> for ffi::AVRational {
     #[inline(always)]
     fn from(value: Rational) -> Self {
-        ffi::AVRational { num: value.0, den: value.1 }
+        ffi::AVRational {
+            num: value.0,
+            den: value.1,
+        }
     }
 }
 
 impl From<f64> for Rational {
     #[inline(always)]
     fn from(value: f64) -> Self {
-        unsafe {
-            Rational::from(ffi::av_d2q(value, libc::c_int::max_value()))
-        }
+        unsafe { Rational::from(ffi::av_d2q(value, libc::c_int::MAX)) }
     }
 }
 

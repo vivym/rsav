@@ -1,5 +1,5 @@
-mod container;
 mod dtor;
+mod imp;
 
-pub use container::{Container, InputContainer, OutputContainer, PacketIter};
 pub use dtor::Destructor;
+pub use imp::{Container, InputContainer, OutputContainer, PacketIter};

@@ -3,14 +3,16 @@ use crate::{codec::CodecParameters, container::Container, ffi, MediaType, Ration
 pub struct Stream<'a, D> {
     container: &'a Container<D>,
     index: u32,
+    // decoder: Option<Decoder<D>>,
+    // encoder: Option<Encoder<D>>,
 }
 
 impl<'a, D> Stream<'a, D> {
-    pub unsafe fn wrap(container: &'a Container<D>, index: u32) -> Self {
+    pub(crate) unsafe fn wrap(container: &'a Container<D>, index: u32) -> Self {
         Stream { container, index }
     }
 
-    pub unsafe fn as_ptr(&self) -> *const ffi::AVStream {
+    pub(crate) unsafe fn as_ptr(&self) -> *const ffi::AVStream {
         *(*self.container.as_ptr()).streams.add(self.index as usize)
     }
 
@@ -51,7 +53,7 @@ impl<'a, D> Stream<'a, D> {
     }
 }
 
-impl<'a, D> PartialEq for Stream<'a, D>{
+impl<'a, D> PartialEq for Stream<'a, D> {
     fn eq(&self, other: &Self) -> bool {
         unsafe { self.as_ptr() == other.as_ptr() }
     }
@@ -66,7 +68,10 @@ pub struct StreamIter<'a, D> {
 
 impl<'a, D> StreamIter<'a, D> {
     pub fn new(container: &'a Container<D>) -> Self {
-        StreamIter { container, current: 0 }
+        StreamIter {
+            container,
+            current: 0,
+        }
     }
 
     pub fn best(self, kind: MediaType) -> Option<Stream<'a, D>> {
@@ -110,9 +115,7 @@ impl<'a, D> Iterator for StreamIter<'a, D> {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current < self.container.nb_streams() {
-            let stream = unsafe {
-                Stream::wrap(self.container, self.current)
-            };
+            let stream = unsafe { Stream::wrap(self.container, self.current) };
             self.current += 1;
             Some(stream)
         } else {

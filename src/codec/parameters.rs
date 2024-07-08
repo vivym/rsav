@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
-use crate::{ffi, MediaType};
 use super::CodecId;
+use crate::{ffi, MediaType};
 
 pub struct CodecParameters<D> {
     ptr: *mut ffi::AVCodecParameters,
@@ -11,17 +11,17 @@ pub struct CodecParameters<D> {
 unsafe impl<D> Send for CodecParameters<D> {}
 
 impl<D> CodecParameters<D> {
-    pub unsafe fn wrap(ptr: *mut ffi::AVCodecParameters, dtor: Option<Rc<D>>) -> Self {
+    pub(crate) unsafe fn wrap(ptr: *mut ffi::AVCodecParameters, dtor: Option<Rc<D>>) -> Self {
         CodecParameters { ptr, dtor }
     }
 
     #[inline]
-    pub unsafe fn as_ptr(&self) -> *const ffi::AVCodecParameters {
+    pub(crate) unsafe fn as_ptr(&self) -> *const ffi::AVCodecParameters {
         self.ptr
     }
 
     #[inline]
-    pub unsafe fn as_mut_ptr(&mut self) -> *mut ffi::AVCodecParameters {
+    pub(crate) unsafe fn as_mut_ptr(&mut self) -> *mut ffi::AVCodecParameters {
         self.ptr
     }
 }

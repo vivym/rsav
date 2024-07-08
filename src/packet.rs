@@ -1,8 +1,10 @@
 use std::io::Write;
 
-use ffmpeg_sys_next::{av_packet_make_writable, av_packet_ref};
-
-use crate::{container::{InputContainer, OutputContainer}, error::Error, ffi};
+use crate::{
+    container::{InputContainer, OutputContainer},
+    error::Error,
+    ffi,
+};
 
 pub struct Packet(ffi::AVPacket);
 
@@ -52,12 +54,12 @@ impl Packet {
     }
 
     #[inline]
-    pub unsafe fn as_ptr(&self) -> *const ffi::AVPacket {
+    pub(crate) unsafe fn as_ptr(&self) -> *const ffi::AVPacket {
         &self.0
     }
 
     #[inline]
-    pub unsafe fn as_mut_ptr(&mut self) -> *mut ffi::AVPacket {
+    pub(crate) unsafe fn as_mut_ptr(&mut self) -> *mut ffi::AVPacket {
         &mut self.0
     }
 }
@@ -131,7 +133,9 @@ impl Packet {
 
     #[inline]
     pub fn rescale_ts<S, D>(&mut self, source: Option<S>, dest: D)
-        where S: Into<crate::Rational>, D: Into<crate::Rational>
+    where
+        S: Into<crate::Rational>,
+        D: Into<crate::Rational>,
     {
         let source = match source {
             Some(source) => source.into(),
@@ -214,7 +218,7 @@ impl Packet {
     }
 
     #[inline]
-    pub unsafe fn is_empty(&self) -> bool {
+    pub(crate) unsafe fn is_empty(&self) -> bool {
         self.0.size == 0
     }
 
@@ -259,8 +263,8 @@ impl Clone for Packet {
     #[inline]
     fn clone_from(&mut self, source: &Self) {
         unsafe {
-            av_packet_ref(&mut self.0, &source.0);
-            av_packet_make_writable(&mut self.0);
+            ffi::av_packet_ref(&mut self.0, &source.0);
+            ffi::av_packet_make_writable(&mut self.0);
         }
     }
 }

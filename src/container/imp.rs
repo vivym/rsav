@@ -2,8 +2,13 @@ use std::rc::Rc;
 
 use ffmpeg_sys_next::{av_dump_format, avformat_write_header};
 
-use crate::{error::Error, ffi, packet::Packet, stream::{Stream, StreamIter, StreamIterMut, StreamMut}};
-use super::dtor::{Destructor, InputDestructor, OutputDestructor, Mode};
+use super::dtor::{Destructor, InputDestructor, Mode, OutputDestructor};
+use crate::{
+    error::Error,
+    ffi,
+    packet::Packet,
+    stream::{Stream, StreamIter, StreamIterMut, StreamMut},
+};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum State {
@@ -15,7 +20,7 @@ enum State {
 pub struct Container<D> {
     ptr: *mut ffi::AVFormatContext,
     dtor: Rc<D>,
-    state: State
+    state: State,
 }
 
 pub type InputContainer = Container<InputDestructor>;
@@ -23,17 +28,17 @@ pub type InputContainer = Container<InputDestructor>;
 pub type OutputContainer = Container<OutputDestructor>;
 
 impl<D> Container<D> {
-    pub unsafe fn destructor(&self) -> Rc<D> {
+    pub(crate) unsafe fn destructor(&self) -> Rc<D> {
         Rc::clone(&self.dtor)
     }
 
     #[inline]
-    pub unsafe fn as_ptr(&self) -> *const ffi::AVFormatContext {
+    pub(crate) unsafe fn as_ptr(&self) -> *const ffi::AVFormatContext {
         self.ptr
     }
 
     #[inline]
-    pub unsafe fn as_mut_ptr(&mut self) -> *mut ffi::AVFormatContext {
+    pub(crate) unsafe fn as_mut_ptr(&mut self) -> *mut ffi::AVFormatContext {
         self.ptr
     }
 
@@ -103,7 +108,7 @@ impl<D> Container<D> {
 impl<D: Destructor> Container<D> {
     const MODE: Mode = D::MODE;
 
-    pub unsafe fn wrap(ptr: *mut ffi::AVFormatContext) -> Self {
+    pub(crate) unsafe fn wrap(ptr: *mut ffi::AVFormatContext) -> Self {
         Container {
             ptr,
             dtor: Rc::new(D::wrap(ptr)),
@@ -116,14 +121,11 @@ impl<D: Destructor> Container<D> {
             Mode::Input => 0,
             Mode::Output => 1,
         };
-        let url = self.url_cstring().unwrap_or_else(|| std::ffi::CString::new("").unwrap());
-        unsafe  {
-            av_dump_format(
-                self.as_mut_ptr(),
-                index,
-                url.as_ptr(),
-                is_output,
-            );
+        let url = self
+            .url_cstring()
+            .unwrap_or_else(|| std::ffi::CString::new("").unwrap());
+        unsafe {
+            av_dump_format(self.as_mut_ptr(), index, url.as_ptr(), is_output);
         }
     }
 }
@@ -152,26 +154,23 @@ impl<'a> Iterator for PacketIter<'a> {
             match packet.read_from(self.0) {
                 Ok(..) => {
                     let stream = unsafe {
-                        Stream::wrap(
-                            std::mem::transmute_copy(&self.0),
-                            packet.stream_index(),
-                        )
+                        Stream::wrap(std::mem::transmute_copy(&self.0), packet.stream_index())
                     };
                     packet.set_time_base(stream.time_base());
                     return Some((stream, packet));
-                },
+                }
                 Err(Error::Eof) => return None,
                 Err(e) => {
                     // TODO: handle error
                     eprintln!("Error reading packet: {}", e);
-                },
+                }
             }
         }
     }
 }
 
 impl OutputContainer {
-    pub fn add_stream_like<'a, D>(&mut self, src: &Stream<'a, D>) -> StreamMut<OutputDestructor> {
+    pub fn add_stream_like<D>(&mut self, src: &Stream<D>) -> StreamMut<OutputDestructor> {
         unsafe {
             let codec = std::ptr::null();
             let ptr = ffi::avformat_new_stream(self.as_mut_ptr(), codec);
@@ -199,15 +198,13 @@ impl OutputContainer {
         match self.state {
             State::Opened => self.write_header()?,
             State::Closed => return Err(Error::WriteAfterClose),
-            _ => {},
+            _ => {}
         }
 
         // TODO: handle error
         let ost = self.stream(packet.stream_index()).unwrap();
         let src_time_base = packet.time_base();
         let dst_time_base = ost.time_base();
-        println!("src_time_base: {:?} {:?}", src_time_base, src_time_base.is_none());
-        println!("dst_time_base: {:?}", dst_time_base);
         if src_time_base != dst_time_base {
             packet.rescale_ts(Some(src_time_base), dst_time_base);
         }
@@ -224,7 +221,7 @@ impl OutputContainer {
                         println!("Header written");
                         self.state = State::HEADERWritten;
                         Ok(())
-                    },
+                    }
                     e => Err(Error::from_ffmpeg_error_code(e)),
                 }
             }
@@ -237,7 +234,7 @@ impl OutputContainer {
         match self.state {
             State::Opened => self.write_header()?,
             State::Closed => return Ok(()),
-            _ => {},
+            _ => {}
         }
 
         unsafe {
@@ -246,7 +243,7 @@ impl OutputContainer {
                     println!("Trailer written");
                     self.state = State::Closed;
                     Ok(())
-                },
+                }
                 e => Err(Error::from_ffmpeg_error_code(e)),
             }
         }
@@ -258,7 +255,9 @@ impl<D> Drop for Container<D> {
         println!("Dropping container with state: {:?}", self.state);
         if self.state == State::HEADERWritten {
             println!("Writing trailer...");
-            unsafe { ffi::av_write_trailer(self.as_mut_ptr()); }
+            unsafe {
+                ffi::av_write_trailer(self.as_mut_ptr());
+            }
         }
     }
 }

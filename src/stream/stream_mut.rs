@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
-use crate::{codec::CodecParameters, container::Container, ffi, MediaType, Rational};
 use super::Stream;
+use crate::{codec::CodecParameters, container::Container, ffi, MediaType, Rational};
 
 pub struct StreamMut<'a, D> {
     container: &'a mut Container<D>,
@@ -9,21 +9,21 @@ pub struct StreamMut<'a, D> {
 }
 
 impl<'a, D> StreamMut<'a, D> {
-    pub unsafe fn wrap(container: &'a mut Container<D>, index: u32) -> Self {
+    pub(crate) unsafe fn wrap(container: &'a mut Container<D>, index: u32) -> Self {
         StreamMut { container, index }
     }
 
-    pub unsafe fn as_mut_ptr(&mut self) -> *mut ffi::AVStream {
-        *(*self.container.as_mut_ptr()).streams.add(self.index as usize)
+    pub(crate) unsafe fn as_mut_ptr(&mut self) -> *mut ffi::AVStream {
+        *(*self.container.as_mut_ptr())
+            .streams
+            .add(self.index as usize)
     }
 
     pub fn set_parameters<P: Into<CodecParameters<D>>>(&mut self, parameters: P) {
         let parameters = parameters.into();
 
         unsafe {
-            ffi::avcodec_parameters_copy(
-                (*self.as_mut_ptr()).codecpar, parameters.as_ptr()
-            );
+            ffi::avcodec_parameters_copy((*self.as_mut_ptr()).codecpar, parameters.as_ptr());
         }
     }
 
@@ -61,7 +61,10 @@ pub struct StreamIterMut<'a, D> {
 
 impl<'a, D> StreamIterMut<'a, D> {
     pub fn new(container: &'a mut Container<D>) -> Self {
-        StreamIterMut { container, current: 0 }
+        StreamIterMut {
+            container,
+            current: 0,
+        }
     }
 
     pub fn best(self, kind: MediaType) -> Option<Stream<'a, D>> {
@@ -107,7 +110,7 @@ impl<'a, D> Iterator for StreamIterMut<'a, D> {
         if self.current < self.container.nb_streams() {
             let stream = unsafe {
                 StreamMut::wrap(
-                    std::mem::transmute_copy(&self.container),  // TODO: ???
+                    std::mem::transmute_copy(&self.container), // TODO: ???
                     self.current,
                 )
             };

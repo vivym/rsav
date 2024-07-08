@@ -1,5 +1,5 @@
-mod stream;
+mod imp;
 mod stream_mut;
 
-pub use stream::{Stream, StreamIter};
-pub use stream_mut::{StreamMut, StreamIterMut};
+pub use imp::{Stream, StreamIter};
+pub use stream_mut::{StreamIterMut, StreamMut};

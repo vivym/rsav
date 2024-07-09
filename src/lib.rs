@@ -8,7 +8,9 @@ pub use ffmpeg_sys_next as ffi;
 pub mod codec;
 pub mod container;
 pub mod error;
+pub mod frame;
 pub mod packet;
+pub mod pixel;
 pub mod stream;
 
 mod io;

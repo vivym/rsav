@@ -1,10 +1,14 @@
 use crate::{ffi, MediaType};
 
+mod context;
 mod decoder;
-mod encoder;
+mod flag;
 mod id;
 mod parameters;
 
+pub use context::Context;
+pub use decoder::Decoder;
+pub use flag::CodecFlags;
 pub use id::CodecId;
 pub use parameters::CodecParameters;
 

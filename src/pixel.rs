@@ -289,6 +289,8 @@ pub enum PixelFormat {
     P412LE,
     GBRAP14BE,
     GBRAP14LE,
+
+    D3D12,
 }
 
 impl From<ffi::AVPixelFormat> for PixelFormat {
@@ -525,6 +527,7 @@ impl From<ffi::AVPixelFormat> for PixelFormat {
             ffi::AVPixelFormat::AV_PIX_FMT_P412LE => PixelFormat::P412LE,
             ffi::AVPixelFormat::AV_PIX_FMT_GBRAP14BE => PixelFormat::GBRAP14BE,
             ffi::AVPixelFormat::AV_PIX_FMT_GBRAP14LE => PixelFormat::GBRAP14LE,
+            ffi::AVPixelFormat::AV_PIX_FMT_D3D12 => PixelFormat::D3D12,
         }
     }
 }
@@ -817,6 +820,7 @@ impl From<PixelFormat> for ffi::AVPixelFormat {
             PixelFormat::P412LE => ffi::AVPixelFormat::AV_PIX_FMT_P412LE,
             PixelFormat::GBRAP14BE => ffi::AVPixelFormat::AV_PIX_FMT_GBRAP14BE,
             PixelFormat::GBRAP14LE => ffi::AVPixelFormat::AV_PIX_FMT_GBRAP14LE,
+            PixelFormat::D3D12 => ffi::AVPixelFormat::AV_PIX_FMT_D3D12,
         }
     }
 }

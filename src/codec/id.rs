@@ -544,7 +544,9 @@ pub enum CodecId {
     AC4,
     SMPTE_2038,
     OSQ,
-    AYUV,
+
+    LEAD,
+    QOA,
 }
 
 impl CodecId {
@@ -1108,7 +1110,9 @@ impl From<ffi::AVCodecID> for CodecId {
             AV_CODEC_ID_AC4 => CodecId::AC4,
             AV_CODEC_ID_SMPTE_2038 => CodecId::SMPTE_2038,
             AV_CODEC_ID_OSQ => CodecId::OSQ,
-            AV_CODEC_ID_AYUV => CodecId::AYUV,
+
+            AV_CODEC_ID_LEAD => CodecId::LEAD,
+            AV_CODEC_ID_QOA => CodecId::QOA,
         }
     }
 }
@@ -1659,7 +1663,9 @@ impl From<CodecId> for ffi::AVCodecID {
             CodecId::AC4 => AV_CODEC_ID_AC4,
             CodecId::SMPTE_2038 => AV_CODEC_ID_SMPTE_2038,
             CodecId::OSQ => AV_CODEC_ID_OSQ,
-            CodecId::AYUV => AV_CODEC_ID_AYUV,
+
+            CodecId::LEAD => AV_CODEC_ID_LEAD,
+            CodecId::QOA => AV_CODEC_ID_QOA,
         }
     }
 }

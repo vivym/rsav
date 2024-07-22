@@ -1,4 +1,4 @@
-use crate::{ffi, pixel::PixelFormat};
+use crate::ffi;
 
 #[derive(PartialEq, Eq)]
 pub struct Frame(*mut ffi::AVFrame);
@@ -91,9 +91,9 @@ impl VideoFrame {
         Self(Frame::empty())
     }
 
-    pub unsafe fn new(pix_fmt: PixelFormat, width: u32, height: u32) {
-        let mut frame = Frame::empty();
-    }
+    // pub unsafe fn new(pix_fmt: PixelFormat, width: u32, height: u32) {
+    //     let mut frame = Frame::empty();
+    // }
 }
 
 bitflags! {

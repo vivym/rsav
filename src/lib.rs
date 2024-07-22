@@ -9,6 +9,7 @@ pub mod codec;
 pub mod container;
 pub mod error;
 pub mod frame;
+pub mod frame2;
 pub mod packet;
 pub mod pixel;
 pub mod stream;
